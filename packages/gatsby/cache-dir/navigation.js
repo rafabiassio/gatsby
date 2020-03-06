@@ -158,7 +158,7 @@ function init() {
   maybeRedirect(window.location.pathname)
 }
 
-class RouteAnnouncer extends React.Component {
+export class RouteAnnouncer extends React.Component {
   constructor(props) {
     super(props)
     this.announcementRef = React.createRef()
@@ -166,6 +166,7 @@ class RouteAnnouncer extends React.Component {
 
   componentDidUpdate(prevProps, nextProps) {
     requestAnimationFrame(() => {
+      console.log(`doing this??`)
       let pageName = `new page at ${this.props.location.pathname}`
       if (document.title) {
         pageName = document.title
@@ -237,7 +238,7 @@ class RouteUpdates extends React.Component {
     return (
       <React.Fragment>
         {this.props.children}
-        <RouteAnnouncer location={location} />
+        <RouteAnnouncer location={this.props.location} />
       </React.Fragment>
     )
   }

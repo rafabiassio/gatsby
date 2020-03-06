@@ -130,4 +130,6 @@ const WrappedRoot = apiRunner(
   }
 ).pop()
 
+console.log(WrappedRoot)
+
 export default () => <StaticQueryStore>{WrappedRoot}</StaticQueryStore>

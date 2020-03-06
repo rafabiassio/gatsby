@@ -59,7 +59,7 @@ apiRunnerAsync(`onClientEntry`).then(() => {
     render() {
       const { location } = this.props
       return (
-        <EnsureResources location={location}>
+        <EnsureResources location={location} loader={loader}>
           {({ pageResources, location }) => (
             <RouteUpdates location={location}>
               <ScrollContext

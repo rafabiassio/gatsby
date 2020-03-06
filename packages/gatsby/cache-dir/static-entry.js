@@ -2,7 +2,15 @@ const React = require(`react`)
 const fs = require(`fs`)
 const { join } = require(`path`)
 const { renderToString, renderToStaticMarkup } = require(`react-dom/server`)
-const { ServerLocation, Router, isRedirect } = require(`@reach/router`)
+const {
+  ServerLocation,
+  Location,
+  Router,
+  isRedirect,
+} = require(`@reach/router`)
+import { ScrollContext } from "gatsby-react-router-scroll"
+import EnsureResources from "./ensure-resources"
+import { shouldUpdateScroll, RouteUpdates } from "./navigation"
 const {
   get,
   merge,
@@ -15,8 +23,14 @@ const {
   memoize,
 } = require(`lodash`)
 
+// This is a hack.
+global.window = {
+  history: {},
+}
+
 const apiRunner = require(`./api-runner-ssr`)
 const syncRequires = require(`./sync-requires`)
+const { RouteAnnouncer } = require(`./navigation`)
 const { version: gatsbyVersion } = require(`gatsby/package.json`)
 
 const stats = JSON.parse(
@@ -229,17 +243,48 @@ export default (pagePath, callback) => {
     }
   }
 
-  const routerElement = createElement(
-    ServerLocation,
-    { url: `${__BASE_PATH__}${pagePath}` },
-    createElement(
-      Router,
-      {
-        id: `gatsby-focus-wrapper`,
-        baseuri: `${__BASE_PATH__}`,
-      },
-      createElement(RouteHandler, { path: `/*` })
-    )
+  class LocationHandler extends React.Component {
+    render() {
+      const { location } = this.props
+      return (
+        <EnsureResources
+          location={location}
+          loader={{
+            loadPageSync() {
+              return {}
+            },
+            loadPage() {
+              return Promise.resolve({})
+            },
+          }}
+        >
+          {({ location }) => (
+            <RouteUpdates location={location}>
+              <ScrollContext
+                location={location}
+                shouldUpdateScroll={shouldUpdateScroll}
+              >
+                <Router
+                  basepath={__BASE_PATH__}
+                  location={location}
+                  id="gatsby-focus-wrapper"
+                >
+                  <RouteHandler path={`/*`} />
+                </Router>
+              </ScrollContext>
+            </RouteUpdates>
+          )}
+        </EnsureResources>
+      )
+    }
+  }
+
+  const routerElement = (
+    <ServerLocation url={`${__BASE_PATH__}${pagePath}`}>
+      <Location>
+        {locationContext => <LocationHandler {...locationContext} />}
+      </Location>
+    </ServerLocation>
   )
 
   const bodyComponent = apiRunner(
